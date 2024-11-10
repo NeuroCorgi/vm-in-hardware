@@ -1,0 +1,11 @@
+-- library ieee;
+-- use ieee.std_logic_1164.all;
+
+-- entity memory_map is
+--   generic (
+--     mem_size   : integer = 
+--     bank_size  : integer = 8
+--     data_width : integer = 32
+--   );
+--   port (
+--     addr : 
