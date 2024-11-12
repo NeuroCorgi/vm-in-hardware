@@ -25,6 +25,7 @@ end;
 architecture memory_arch of memory is
   type MemoryT is array(0 to 2 ** addr_width - 1) of std_logic_vector(data_width - 1 downto 0);
   signal mem : MemoryT;
+  signal mem2 : MemoryT;
   
 begin
 
@@ -80,10 +81,12 @@ begin
 
   main : process(clk)
   begin
-    if rising_edge(clk) then
-      -- mem(address) <= data_in when we = '1';
+    if (rst = '0') then
+      mem2 <= mem;
+    elsif rising_edge(clk) and we = '1' then
+      mem2(address) <= data_in;
     end if;
   end process;
 
-  data_out <= mem(address);
+  data_out <= mem2(address);
 end architecture memory_arch;

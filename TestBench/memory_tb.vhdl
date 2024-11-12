@@ -10,7 +10,7 @@ entity memory_tb is
 end entity memory_tb;
 
 architecture testbench of memory_tb is
-  constant ADDR_WIDTH : Integer := 16;
+  constant ADDR_WIDTH : Integer := 4;
   constant DATA_WIDTH : Integer := 16;
 
   signal clk : std_logic := '0';
@@ -42,7 +42,7 @@ begin
 
   mem : memory
     generic map (
-      file_name => "memory.hex",
+      file_name => "memreg.hex",
       addr_width => ADDR_WIDTH,
       data_width => DATA_WIDTH
     )
@@ -59,17 +59,24 @@ begin
 
   test : process
   begin
+    we <= '0';
+    rst <= '0';
     wait until rising_edge(clk);
+    rst <= '1';
     wait until rising_edge(clk);
 
     address <= 0;
     wait until rising_edge(clk);
-    report to_string(to_integer(unsigned(data_out))) severity warning;
+    assert to_integer(unsigned(data_out)) = 19;
+    report "Address 0: " & to_string(to_integer(unsigned(data_out)));
     
     address <= 10;
     wait until rising_edge(clk);
-    report to_string(to_integer(unsigned(data_out))) severity warning;
-    
+    report "Address 10: " & to_string(to_integer(unsigned(data_out)));
+    assert to_integer(unsigned(data_out)) = 32769;
+
+    report "all tests completed";
+
     wait;
   end process;
 

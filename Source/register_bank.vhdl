@@ -5,7 +5,7 @@ use ieee.std_logic_unsigned.all;
 entity register_bank is
   generic (
     bank_size  : integer := 8;
-    data_width : integer := 32
+    data_width : integer := 16
   );
   port (
     addr     : in  integer range 0 to bank_size - 1;
@@ -22,7 +22,7 @@ architecture register_bank_arch of register_bank is
   type RegistersT is array (0 to bank_size - 1) of
     std_logic_vector(data_width - 1 downto 0);
 
-  signal registers : RegistersT;
+  signal registers : RegistersT := (others => (others => '0'));
 begin
   process(clk, rst)
   begin

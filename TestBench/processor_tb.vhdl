@@ -15,7 +15,7 @@ architecture testbench of processor_tb is
   constant DATA_WIDTH : Integer := 16;
 
   signal clk : Std_Logic := '0';
-  signal rst : Std_Logic := '0';
+  signal rst : Std_Logic := '1';
   signal we  : Std_Logic := '0';
 
   signal address : Integer := 0;
@@ -24,6 +24,7 @@ architecture testbench of processor_tb is
 
   component memory
     generic (
+      file_name  : String;
       addr_width : Integer;
       data_width : Integer
     );
@@ -58,6 +59,7 @@ begin
 
   mem : memory
     generic map (
+      file_name  => "memory.hex",
       addr_width => ADDR_WIDTH,
       data_width => DATA_WIDTH
     )
@@ -86,14 +88,14 @@ begin
       rst => rst
     );
 
-  clk <= not clk after 50 ns;
+  clk <= not clk after 5 ns;
 
   init : process
   begin
-    rst <= '1';
-    wait until rising_edge(clk);
-    wait until rising_edge(clk);
     rst <= '0';
+    wait until rising_edge(clk);
+    wait until rising_edge(clk);
+    rst <= '1';
 
     wait;
   end process;

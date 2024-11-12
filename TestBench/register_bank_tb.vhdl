@@ -80,14 +80,26 @@ begin
     addr <= 0;
     wait for 100 ns;
 
+    report to_string(to_integer(unsigned(data_out)));
     assert to_integer(unsigned(data_out)) = 0;
 
     addr <= 1;
     wait for 100 ns;
 
+    report to_string(to_integer(unsigned(data_out)));
     assert to_integer(unsigned(data_out)) = 0;
+
+    we <= '1';
+    data_in <= "1010";
+    wait for 100 ns;
+    we <= '0';
+    wait for 100 ns;
+
+    report to_string(to_integer(unsigned(data_out)));
+    assert to_integer(unsigned(data_out)) = 10;
+
+    wait;
     
   end process;
 
   end architecture testbench;
-  
