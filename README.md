@@ -661,7 +661,327 @@ The UART module supports real-time communication with a terminal, allowing input
 
 The [test benches](https://github.com/NeuroCorgi/vm-in-hardware/tree/main/TestBench) provided validate the functionality of key components in the system, including memory, processor, register bank, and stack. Each test bench is tailored to ensure that the components operate as expected under various conditions. The memory test bench verifies data retrieval from specific addresses initialized from a hex file, confirming proper memory mapping and reset behavior. The processor test bench evaluates instruction fetching, decoding, and execution. The register bank test bench tests read and write operations to registers, ensuring data integrity and correct updates. Lastly, the stack test bench validates push and pop operations, ensuring proper LIFO behavior. Together, these test benches confirm the correctness and robustness of the design, making it ready for deployment on the DE10-Nano board.
 
+<<<<<<< Updated upstream
 ## 4. Executing flow
+=======
+Lets break down the test bench into more details:
+
+### 4.1 Processor Test Bench
+
+This test bench (file: `processor_tb.vhdl`) is designed to simulate and verify the interaction between a processor and memory module. Below is an explanation of the code:
+The code establishes a test bench environment using VHDL to instantiate and connect the processor and memory components. It also simulates a clock signal and reset behavior for the test.
+
+**Constants and signals:**
+
+```vhdl
+constant ADDR_WIDTH : Integer := 15;
+constant DATA_WIDTH : Integer := 16;
+
+signal clk : Std_Logic := '0';
+signal rst : Std_Logic := '1';
+signal we  : Std_Logic := '0';
+
+signal address : Integer := 0;
+signal data_in  : std_logic_vector(DATA_WIDTH - 1 downto 0);
+signal data_out : std_logic_vector(DATA_WIDTH - 1 downto 0);
+```
+
+- `ADDR_WIDTH` and `DATA_WIDTH` define the width of the address and data buses.
+- `clk`, `rst`, `we`, `address`, `data_in`, and `data_out` represent clock, reset, write enable, address bus, input data bus, and output data bus, respectively.
+
+#### Memory componemt
+
+```vhdl
+component memory
+  generic (
+    file_name  : String;
+    addr_width : Integer;
+    data_width : Integer
+  );
+  port (
+    address  : in  integer range 0 to 2 ** addr_width - 1;
+    data_in  : in  std_logic_vector(DATA_WIDTH - 1 downto 0);
+    data_out : out std_logic_vector(DATA_WIDTH - 1 downto 0);
+    we       : in  std_logic;
+
+    rst : in std_logic;
+    clk : in std_logic
+  );
+end component;
+```
+
+- Memory module has a file input (file_name) to load initial contents (e.g., "memory.hex") and ports for addressing, data transfer, and control.
+
+#### Processor component
+
+```vhdl
+component processor
+  generic (
+    addr_width : Integer;
+    data_width : Integer
+  );
+  port (
+    data_in  : in  Std_Logic_Vector(data_width - 1 downto 0);
+    data_out : out Std_Logic_Vector(data_width - 1 downto 0);
+    address  : out Integer range 0 to 2 ** addr_width - 1;
+    we       : out Std_Logic;
+
+    rst : in Std_Logic;
+    clk : in Std_Logic
+  );
+end component;
+```
+
+Processor module generates address, data output, and write enable signals based on its internal logic.
+
+#### Memory example
+
+```vhdl
+mem : memory
+  generic map (
+    file_name  => "memory.hex",
+    addr_width => ADDR_WIDTH,
+    data_width => DATA_WIDTH
+  )
+  port map (
+    address => address,
+    data_in => data_in,
+    data_out => data_out,
+    we => we,
+    clk => clk,
+    rst => rst
+  );
+```
+
+Loads "memory.hex" file and connects the memory ports to test bench signals.
+
+#### Processor example
+
+```vhdl
+pr : processor
+  generic map (
+    addr_width => ADDR_WIDTH,
+    data_width => DATA_WIDTH
+  )
+  port map (
+    address => address,
+    data_in => data_out,
+    data_out => data_in,
+    we => we,
+    clk => clk,
+    rst => rst
+  );
+```
+
+Connects processor to memory through the test bench signals.
+
+#### Reset Initialization
+
+```vhdl
+init : process
+begin
+  rst <= '0';
+  wait until rising_edge(clk);
+  wait until rising_edge(clk);
+  rst <= '1';
+  wait;
+end process;
+```
+
+Holds the reset signal low for two clock cycles and then sets it high.
+
+#### Purpose
+
+This test bench:
+
+- Simulates processor and memory interaction.
+- Ensures data flows correctly between the processor and memory.
+- Verifies the clock and reset behaviors.
+
+### 4.2 Memory Test Bench
+
+This test bench (`memory_tb.vhdl`) is designed to verify the functionality of a memory module by simulating its operation with a clock, reset, and address signals.
+The test bench sets up a simulation environment for the memory component. It generates a clock signal, applies a reset, and checks the memory values at specific addresses to ensure the memory is working as expected.
+Below is a simple explanation of the code and its purpose.
+
+#### Test process
+
+```vhdl
+test : process
+begin
+  we <= '0';
+  rst <= '0';
+  wait until rising_edge(clk);
+  rst <= '1';
+  wait until rising_edge(clk);
+
+  address <= 0;
+  wait until rising_edge(clk);
+  assert to_integer(unsigned(data_out)) = 19;
+  report "Address 0: " & to_string(to_integer(unsigned(data_out)));
+  
+  address <= 10;
+  wait until rising_edge(clk);
+  report "Address 10: " & to_string(to_integer(unsigned(data_out)));
+  assert to_integer(unsigned(data_out)) = 32769;
+
+  report "all tests completed";
+
+  wait;
+end process;
+```
+
+**Reset and Write Enable:**
+
+- The reset (rst) is initially low, then set high after the clock starts.
+- Write enable (we) is kept low since the test focuses on reading data.
+
+**Address and Data Testing:**
+
+- Checks data at address = 0 and verifies it equals 19.
+- Checks data at address = 10 and verifies it equals 32769.
+
+**Assertions:**
+
+- Validates that data_out matches the expected values.
+- Reports results to the console.
+
+**Purpose:**
+
+- Validates memory behavior by comparing expected and actual data at specific addresses.
+- Ensures the memory responds correctly to clock and reset signals.
+- Verifies the initial memory content (memreg.hex) is loaded accurately.
+
+### 4.3 Register Bank Test Bench
+
+The test bench simulates a register bank module, verifying its ability to read and write data under various conditions. It uses `clock` and `reset` signals to control the simulation and tests data flow within the component.
+
+**Architecture:**
+
+- Defines constants `DATA_WIDTH` and `BANK_SIZE` to specify register bank dimensions.
+- Declares signals for clock (`clk`), reset (`rst`), write enable (`we`), address (`addr`), and data buses (`data_in`, `data_out`).
+
+**Component Instantiation:**
+
+- Instantiates the register_bank component with parameters for bank size and data width.
+- Connects the test bench signals to the component ports.
+
+**Clock Process:**
+
+- Generates a `100` ns clock cycle for simulation.
+
+#### Test process
+
+```vhdl
+test : process
+begin
+  wait for 110 ns;
+
+  addr <= 0;
+  wait for 100 ns;
+
+  report to_string(to_integer(unsigned(data_out)));
+  assert to_integer(unsigned(data_out)) = 0;
+
+  addr <= 1;
+  wait for 100 ns;
+
+  report to_string(to_integer(unsigned(data_out)));
+  assert to_integer(unsigned(data_out)) = 0;
+
+  we <= '1';
+  data_in <= "1010";
+  wait for 100 ns;
+  we <= '0';
+  wait for 100 ns;
+
+  report to_string(to_integer(unsigned(data_out)));
+  assert to_integer(unsigned(data_out)) = 10;
+
+  wait;
+end process;
+```
+
+**Initial Read:**
+
+- Tests registers at addresses `0` and `1` to ensure they output the default value (`0`).
+
+**Write Operation:**
+
+- Writes the binary value `1010` (`decimal 10`) to the register at the current address (`addr = 0`) when write enable (`we`) is active.
+- Confirms the written value by checking the `data_out` signal.
+
+**Assertions and Reports:**
+
+- Validates data_out matches expected results.
+- Reports results during each test phase.
+
+**Purpose:**
+
+- Validates the ability of the register bank to read from and write to specific registers.
+- Ensures the register bank behaves correctly when clock, reset, and write enable signals are applied.
+- Confirms that data written to a register can be successfully read back.
+
+### 4.4 Stack Test Bench
+
+The test bench simulates a stack module, testing its functionality for pushing and popping data under clocked conditions. It validates proper data handling, including data input (`data_in`), output (`data_out`), and control signals for push (`we`) and pop (`pop`).
+
+**Architecture:**
+
+- `data_in` (`3-bit input`) and `data_out` (`3-bit output`) for stack operations.
+- `pop` (control signal for popping data) and `we` (control signal for writing data).
+- `clk` (clock signal) and `rst` (reset signal).
+- Instantiates the stack component with configurable `data_width` and `stack_size`.
+
+**Clock Process:**
+
+- Generates a clock signal with a `100` ns period (`50` ns high, `50` ns low).
+
+#### Test process
+
+```vhdl
+main : process
+begin
+  rst <= '0';
+  wait until rising_edge(clk);
+  wait until rising_edge(clk);
+  rst <= '1';
+
+  report "Starting testing";
+  wait until falling_edge(clk);
+
+  data_in <= "101";
+  we <= '1';
+  wait until falling_edge(clk);
+  we <= '0';
+  assert data_out = "101";
+
+  wait;
+end process;
+```
+
+**Reset Initialization:**
+
+- The reset (`rst`) is initially low and set high after two clock cycles.
+
+**Data Push Operation:**
+
+- Sets `data_in` to `101` and activates the write enable (`we`) signal during the clock's falling edge to push data into the `stack`.
+- Deactivates `we` after writing and verifies that `data_out` matches the pushed value (`101`).
+
+**Assertions:**
+
+- Ensures the stack outputs the correct data after the push operation.
+- Reports progress to track the test sequence.
+
+**Purpose:**
+
+- Validates the stack's ability to store and retrieve data accurately during push operations.
+- Confirms the stack responds correctly to clock and reset signals.
+- Ensures the control signals (`we` and `pop`) manage data flow as expected.
+
+## 5. Executing flow
+>>>>>>> Stashed changes
 
 ![execution](img/image.png)
 The system executes in several stages, from setup and self-test to running the game.
@@ -674,9 +994,15 @@ The project is compiled using the make command, which initializes the processor'
 make -C TestBench run TARGET=processor
 ```
 
+<<<<<<< Updated upstream
 During compilation, ghdl compiles and runs the test bench. Assertion warnings about NUMERIC_STD.TO_INTEGER appear but default to zero.
 
 ### 4.1 Self-Test Execution
+=======
+During compilation, ghdl compiles and runs the test bench. Assertion warnings about `NUMERIC_STD`.`TO_INTEGER` appear but default to zero.
+
+### 5.1 Self-Test Execution
+>>>>>>> Stashed changes
 
 The self-test checks the processor and provides a completion code upon success.
 
@@ -685,7 +1011,11 @@ Self-test complete, all tests pass
 The self-test completion code is: BNCyODLfQkIL
 ```
 
+<<<<<<< Updated upstream
 ### 4.2 Game Initialization
+=======
+### 5.2 Game Initialization
+>>>>>>> Stashed changes
 
 After passing the self-test, the game begins. The player sees an introductory message and starts the adventure.
 
@@ -699,7 +1029,11 @@ Exits:
 - south
 ```
 
+<<<<<<< Updated upstream
 ## 5. Conclusion
+=======
+## 6. Conclusion
+>>>>>>> Stashed changes
 
 This embedded systems assignment demonstrates the design and implementation of a fully functional system for the DE10-Nano board using VHDL. The project integrates key components—processor, memory, register bank, stack, and UART—into a cohesive and modular system. Each component has been designed to perform a specific role, contributing to the system's overall functionality.
 The processor is the control unit, responsible for fetching, decoding, and executing instructions while coordinating with other components. The memory stores program instructions and data, initialized from a hex file for easy configuration. The register bank provides fast, temporary storage for arithmetic and logic operations, ensuring efficient data handling. The stack manages function calls, temporary data, and control flow through a robust push/pop mechanism. Finally, the UART enables serial communication, allowing real-time input from a terminal and output to external devices, enhancing the system’s interactivity and usability.
