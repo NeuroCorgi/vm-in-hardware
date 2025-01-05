@@ -22,6 +22,10 @@ architecture testbench of processor_tb is
   signal data_in  : std_logic_vector(DATA_WIDTH - 1 downto 0);
   signal data_out : std_logic_vector(DATA_WIDTH - 1 downto 0);
 
+  signal cin, cout : Std_Logic_Vector(7 downto 0);
+  signal cin_r, cout_w : Std_Logic;
+  signal nempty : Std_Logic;
+
   component memory
     generic (
       file_name  : String;
@@ -50,6 +54,13 @@ architecture testbench of processor_tb is
       address  : out Integer range 0 to 2 ** addr_width - 1;
       we       : out Std_Logic;
 
+      cout   : out std_logic_vector(7 downto 0);
+      cout_w : out std_logic;
+
+      cin    : in  std_logic_vector(7 downto 0);
+      cin_av : in  std_logic;
+      cin_r  : out std_logic;
+      
       rst : in Std_Logic;
       clk : in Std_Logic
     );
@@ -84,11 +95,18 @@ begin
       data_out => data_in,
       we => we,
 
+      cin => cin,
+      cin_r => cin_r,
+      cin_av => nempty,
+
+      cout => cout,
+      cout_w => cout_w,
+
       clk => clk,
       rst => rst
     );
 
-  clk <= not clk after 5 ns;
+  clk <= not clk after 1 ns;
 
   init : process
   begin

@@ -14,6 +14,13 @@ entity processor is
     address  : out integer range 0 to 2 ** addr_width - 1;
     data_out : out std_logic_vector(data_width - 1 downto 0);
     we       : out std_logic;
+
+    cout   : out std_logic_vector(7 downto 0);
+    cout_w : out std_logic;
+
+    cin    : in std_logic_vector(7 downto 0);
+    cin_av : in  std_logic;
+    cin_r  : out std_logic;
     
     rst  : in  std_logic;
     clk  : in  std_logic
@@ -60,7 +67,7 @@ architecture processor_arch of processor is
      Call,
      Ret,
      Out1,
-     In1,
+     InWait, In1,
      Noop);
   subtype StageT is integer;
 
@@ -84,6 +91,9 @@ architecture processor_arch of processor is
   signal stack_write : Data;
   signal stack_we : Std_Logic := '0';
   signal stack_pop : Std_Logic := '0';
+
+  signal cout_write : Std_Logic := '0';
+  signal cin_read : Std_Logic := '0';
 
   signal op1   : Data;
   signal op2   : Data;
@@ -124,7 +134,7 @@ begin
 
   registers : register_bank
     generic map (
-      bank_size => 10,
+      bank_size => 8,
       data_width => data_width
     )
     port map (
@@ -154,23 +164,27 @@ begin
   main : process(clk, rst)
   begin
     if rst = '0' then
-      adreg <= (others => '0');
-      pc    <= (others => '0');
-      state <= Fetch;
+      adreg     <= (others => '0');
+      pc        <= (others => '0');
+      state     <= Fetch;
       reg_we    <= '0';
       stack_we  <= '0';
       stack_pop <= '0';
-      mem_we <= '0';
-      mem_io <= '0';
+      mem_we    <= '0';
+      mem_io    <= '0';
+      cout_write <= '0';
+      cin_read   <= '0';
     elsif rising_edge(clk) then
       case state is
         when Fetch =>
           -- Reset write signals
-          mem_we <= '0';
-          mem_io <= '0';
+          mem_we    <= '0';
+          mem_io    <= '0';
           reg_we    <= '0';
           stack_we  <= '0';
           stack_pop <= '0';
+          cout_write <= '0';
+          cin_read   <= '0';
           
           case to_integer(unsigned(data_in)) is
             when 0 =>
@@ -216,7 +230,7 @@ begin
             when 19 =>
               state <= Out1;
             when 20 =>
-              state <= In1;
+              state <= InWait;
             when 21 => null; -- noop
             when others =>
               report "Unknown instruction: " & to_string(to_integer(unsigned(data_in)));
@@ -452,26 +466,38 @@ begin
           pc <= pc + 1;
           
         when Call =>
-          -- report "Calling and jumping to " & to_string(to_integer(unsigned(data_inr)));
-          -- report "from " & to_string(to_integer(unsigned(pc)));
           stack_write <= pc + 1;
           stack_we <= '1';
           state <= Fetch;
           pc <= data_inr;
         when Ret =>
-          -- report "Returning to " & to_string(to_integer(unsigned(stack_top)));
           pc <= stack_top;
           stack_pop <= '1';
           state <= Fetch;
 
         when Out1 =>
+          -- cout <= data_inr(7 downto 0);
+          -- cout_write <= '1';
           if (data_inr < 128) then
             write(output, to_string(character'val(to_integer(unsigned(data_inr)))));
           end if;
           state <= Fetch;
           pc <= pc + 1;
 
+        when InWait =>
+          -- if cin_av = '1' then
+          --   state <= In1;
+          -- else
+            state <= InWait;
+          -- end if;
         when In1 =>
+          if (to_integer(unsigned(data_in)) - 32768 >= 0) then
+            reg_write(data_width - 1 downto 8) <= (others => '0');
+            reg_write(7 downto 0) <= cin;
+            reg_we <= '1';
+            reg_sel <= to_integer(unsigned(data_in)) - 32768;
+          end if;
+          state <= Fetch;
           pc <= pc + 1;
           
         when others =>
@@ -480,6 +506,9 @@ begin
 
     end if;
   end process;
+
+  cout_w <= cout_write;
+  cin_r <= cin_read;
 
   we <= mem_we when mem_io = '1' else
         '0';

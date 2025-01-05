@@ -1,6 +1,8 @@
 GHDL_OPTS=-fsynopsys --std=08
 LIB_NAME=test
 
+.PHONY=all
+
 all: elaborate
 
 elaborate: analyze
