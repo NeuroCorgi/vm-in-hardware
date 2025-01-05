@@ -1,6 +1,6 @@
 GHDL_OPTS=-fsynopsys --std=08
 LIB_NAME=test
-
+TARGET=processor
 all: elaborate
 
 elaborate: analyze

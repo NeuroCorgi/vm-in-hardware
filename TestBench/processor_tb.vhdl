@@ -18,7 +18,8 @@ architecture testbench of processor_tb is
   signal rst : Std_Logic := '1';
   signal we  : Std_Logic := '0';
 
-  signal address : Integer := 0;
+--  signal address : Integer := 0;
+  signal address : Integer range 0 to 2 ** ADDR_WIDTH - 1 := 0;
   signal data_in  : std_logic_vector(DATA_WIDTH - 1 downto 0);
   signal data_out : std_logic_vector(DATA_WIDTH - 1 downto 0);
 
