@@ -74,7 +74,7 @@ architecture processor_arch of processor is
   signal mem_we : Std_Logic := '0';
   signal mem_io : Std_Logic := '0';
 
-  signal reg_sell : Integer range 0 to 7;
+  signal reg_sell : Integer range 0 to 9;
   signal reg_sel : Integer range 0 to 7;
   signal reg_data : Data;
   signal reg_write: Data;

@@ -661,9 +661,6 @@ The UART module supports real-time communication with a terminal, allowing input
 
 The [test benches](https://github.com/NeuroCorgi/vm-in-hardware/tree/main/TestBench) provided validate the functionality of key components in the system, including memory, processor, register bank, and stack. Each test bench is tailored to ensure that the components operate as expected under various conditions. The memory test bench verifies data retrieval from specific addresses initialized from a hex file, confirming proper memory mapping and reset behavior. The processor test bench evaluates instruction fetching, decoding, and execution. The register bank test bench tests read and write operations to registers, ensuring data integrity and correct updates. Lastly, the stack test bench validates push and pop operations, ensuring proper LIFO behavior. Together, these test benches confirm the correctness and robustness of the design, making it ready for deployment on the DE10-Nano board.
 
-<<<<<<< Updated upstream
-## 4. Executing flow
-=======
 Lets break down the test bench into more details:
 
 ### 4.1 Processor Test Bench
@@ -981,7 +978,6 @@ end process;
 - Ensures the control signals (`we` and `pop`) manage data flow as expected.
 
 ## 5. Executing flow
->>>>>>> Stashed changes
 
 ![execution](img/image.png)
 The system executes in several stages, from setup and self-test to running the game.
@@ -994,15 +990,9 @@ The project is compiled using the make command, which initializes the processor'
 make -C TestBench run TARGET=processor
 ```
 
-<<<<<<< Updated upstream
-During compilation, ghdl compiles and runs the test bench. Assertion warnings about NUMERIC_STD.TO_INTEGER appear but default to zero.
-
-### 4.1 Self-Test Execution
-=======
 During compilation, ghdl compiles and runs the test bench. Assertion warnings about `NUMERIC_STD`.`TO_INTEGER` appear but default to zero.
 
 ### 5.1 Self-Test Execution
->>>>>>> Stashed changes
 
 The self-test checks the processor and provides a completion code upon success.
 
@@ -1011,11 +1001,7 @@ Self-test complete, all tests pass
 The self-test completion code is: BNCyODLfQkIL
 ```
 
-<<<<<<< Updated upstream
-### 4.2 Game Initialization
-=======
 ### 5.2 Game Initialization
->>>>>>> Stashed changes
 
 After passing the self-test, the game begins. The player sees an introductory message and starts the adventure.
 
@@ -1029,11 +1015,7 @@ Exits:
 - south
 ```
 
-<<<<<<< Updated upstream
-## 5. Conclusion
-=======
 ## 6. Conclusion
->>>>>>> Stashed changes
 
 This embedded systems assignment demonstrates the design and implementation of a fully functional system for the DE10-Nano board using VHDL. The project integrates key components—processor, memory, register bank, stack, and UART—into a cohesive and modular system. Each component has been designed to perform a specific role, contributing to the system's overall functionality.
 The processor is the control unit, responsible for fetching, decoding, and executing instructions while coordinating with other components. The memory stores program instructions and data, initialized from a hex file for easy configuration. The register bank provides fast, temporary storage for arithmetic and logic operations, ensuring efficient data handling. The stack manages function calls, temporary data, and control flow through a robust push/pop mechanism. Finally, the UART enables serial communication, allowing real-time input from a terminal and output to external devices, enhancing the system’s interactivity and usability.
