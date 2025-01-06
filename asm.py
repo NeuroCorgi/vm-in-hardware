@@ -1,3 +1,5 @@
+import sys
+
 import struct
 
 class SynacorAssembler:
@@ -75,7 +77,7 @@ class SynacorAssembler:
 
 
 # Example usage
-source_file = 'fib.asm'  # Replace with your source file
-output_file = 'fib.bin'  # Replace with your output binary file
+source_file = sys.argv[1]  # Replace with your source file
+output_file = source_file.split('.')[0] + '.bin'  # Replace with your output binary file
 assembler = SynacorAssembler(source_file, output_file)
 assembler.assemble()

@@ -82,8 +82,8 @@ architecture processor_arch of processor is
   signal mem_we : Std_Logic := '0';
   signal mem_io : Std_Logic := '0';
 
-  signal reg_sell : Integer range 0 to 10;
-  signal reg_sel : Integer range 0 to 10;
+  signal reg_sell : Integer range 0 to 9;
+  signal reg_sel : Integer range 0 to 9;
   signal reg_data : Data;
   signal reg_write: Data;
   signal reg_we: Std_Logic := '0';
@@ -117,7 +117,7 @@ architecture processor_arch of processor is
 
   component stack
     generic (
-      -- stack_size : Positive;
+      stack_size : Positive;
       data_width : Positive
     );
     port (
@@ -150,7 +150,8 @@ begin
 
   st : stack
     generic map (
-      data_width => data_width
+      data_width => data_width,
+      stack_size => 1024
     )
     port map (
       data_in => stack_write,
@@ -500,7 +501,7 @@ begin
         when Out1 =>
           -- cout <= data_inr(7 downto 0);
           -- cout_write <= '1';
-          report "Tried to print: " & to_string(character'val(to_integer(unsigned(data_inr))));
+          -- report "Tried printing: " & to_string(to_integer(unsigned(data_inr)));
           if (data_inr < 128) then
             write(output, to_string(character'val(to_integer(unsigned(data_inr)))));
           end if;

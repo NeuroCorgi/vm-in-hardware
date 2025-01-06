@@ -1,4 +1,4 @@
-GHDL_OPTS=-fsynopsys --std=08
+\GHDL_OPTS=-fsynopsys --std=08 --warn-no-binding
 LIB_NAME=src
 TARGET=system
 
