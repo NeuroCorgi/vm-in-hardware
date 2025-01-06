@@ -1,7 +1,7 @@
 ---
 # Document
 title: VM in hardware - Embedded System 
-date: December, 2024
+date: January, 2025
 author: Aleksandr Pokatilov, Jurijs Zuravlovs
 lang: en-GB
 toc: true
@@ -1015,7 +1015,143 @@ Exits:
 - south
 ```
 
-## 6. Conclusion
+## 6. Fibonacci Sequence Test and Execution
+
+To make improvements with the Virtual Machine, we decided to test `processor` with Fibonacci program. First converts text-based assembly code into binary files for a Virtual Machine. The assembler `asm.py` supports labels, negative numbers, and binary output, making it easy to write programs with arithmetic, jumps, and input/output operations.
+
+This program `fib.asm` calculates and prints the first 20 numbers in the Fibonacci sequence. It uses loops, subroutines, and stack operations to handle arithmetic and formatting tasks.
+
+The program begins by initializing registers:
+
+```as
+set r8 20
+set r0 0
+set r1 1
+```
+
+Register `r8` is set to 20 to define the number of terms to calculate. Registers `r0` and `r1` are set to 0 and 1, representing the first two Fibonacci numbers.
+
+The main loop calculates each Fibonacci number, prints it, and moves to the next value:
+
+```as
+:loop
+    call print_number
+    out 10
+
+    set r2 r1
+    add r1 r0 r1
+    set r0 r2
+
+    sub r8 r8 1
+    jt r8 loop
+    halt
+```
+
+The `call print_number` statement prints the current Fibonacci number stored in `r0`. After printing, it outputs a newline (`out 10`). The Fibonacci calculation updates `r0` and `r1` by adding the previous two values, and the loop counter `r8` is decremented. When `r8` reaches 0, the program halts.
+
+The assembler processes this code and outputs a binary file (`program.bin`) that the Virtual Machine can run.
+
+The `print_number` subroutine prints the number stored in `r0` by extracting its digits and pushing them onto the stack. It first saves the registers `r0` and `r1` to preserve their values:
+
+```as
+:print_number
+    push r0
+    push r1
+    set r7 0
+```
+
+The digits are extracted using modulo 10, and the `divide` subroutine is called to remove the last digit:
+
+```as
+:stack_number
+    mod r1 r0 10
+    call divide
+
+    add r7 r7 1
+    push r1
+
+    jf r0 print
+    jmp stack_number
+```
+
+Each digit is pushed onto the stack, and the process repeats until no digits are left (`r0 = 0`).
+
+Once all digits are stacked, they are popped and printed in the correct order:
+
+```as
+:print
+    pop r2
+    call print_digit
+    sub r7 r7 1
+    jt r7 print
+```
+
+The `print_digit` subroutine converts each digit into its ASCII code by adding 48 and outputs it:
+
+```as
+:print_digit
+    add r2 r2 48
+    out r2
+    ret
+```
+
+After printing all digits, the subroutine restores the original values of `r0` and `r1`.
+
+The divide subroutine performs integer division by 10. It repeatedly subtracts 10 and increments a counter until the value is less than 10.
+At the end of the loop, the quotient is stored in r0, and the original value of r1 is restored
+
+```as
+:divide
+    push r1
+    set r1 0
+
+    gt r5 r0 10
+    jf r5 divide_end
+
+:divide_loop
+    sub r0 r0 10
+    add r1 r1 1
+
+    gt r5 r0 10
+    jt r5 divide_loop
+:divide_end
+    set r0 r1
+    pop r1
+    ret
+
+```
+
+The input format uses labels (starting with `:`) to simplify jumps and function calls. Instructions and values are separated by spaces, and comments start with `;`. The assembler creates binary files in 16-bit little-endian format, which can be loaded into the Virtual Machine.
+
+To execute, load the binary file into the Virtual Machine. The output prints Fibonacci numbers as ASCII characters. The assembler handles negative numbers and labels to make the code easier to write and understand.
+
+![flow](img/asmlFlow.png)
+
+In short, this assembler `asm.py` converts assembly code into binary files for quick testing and execution on the Virtual Machine. It supports loops, jumps, and input/output, making it useful for tasks like Fibonacci calculations and other computations.
+
+Program output:
+
+```bash
+> make -C TestBench run TARGET=processor
+ghdl -a -fsynopsys --std=08 --warn-no-binding --work=test -P../Source processor_tb.vhdl
+ghdl -e -fsynopsys --std=08 --warn-no-binding --work=test -P../Source processor_tb
+ghdl run -fsynopsys --std=08 --warn-no-binding --work=test -P../Source processor_tb
+0
+1
+1
+2
+3
+5
+8
+13
+21
+34
+processor.vhdl:248:11:@2315ns:(report failure): Machine halted
+ghdl:error: report failed
+ghdl:error: simulation failed
+```
+
+## 7. Conclusion
 
 This embedded systems assignment demonstrates the design and implementation of a fully functional system for the DE10-Nano board using VHDL. The project integrates key components—processor, memory, register bank, stack, and UART—into a cohesive and modular system. Each component has been designed to perform a specific role, contributing to the system's overall functionality.
 The processor is the control unit, responsible for fetching, decoding, and executing instructions while coordinating with other components. The memory stores program instructions and data, initialized from a hex file for easy configuration. The register bank provides fast, temporary storage for arithmetic and logic operations, ensuring efficient data handling. The stack manages function calls, temporary data, and control flow through a robust push/pop mechanism. Finally, the UART enables serial communication, allowing real-time input from a terminal and output to external devices, enhancing the system’s interactivity and usability.
