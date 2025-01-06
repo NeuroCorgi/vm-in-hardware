@@ -70,7 +70,7 @@ begin
 
   mem : memory
     generic map (
-      file_name  => "memory.hex",
+      file_name  => "fib.bin.hex",
       addr_width => ADDR_WIDTH,
       data_width => DATA_WIDTH
     )

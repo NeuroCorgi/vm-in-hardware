@@ -68,7 +68,8 @@ architecture processor_arch of processor is
      Ret,
      Out1,
      InWait, In1,
-     Noop);
+     Noop,
+     Sub, SubReadDest, SubReadFirstArg);
   subtype StageT is integer;
 
   signal data_inr: Data;
@@ -81,8 +82,8 @@ architecture processor_arch of processor is
   signal mem_we : Std_Logic := '0';
   signal mem_io : Std_Logic := '0';
 
-  signal reg_sell : Integer range 0 to 7;
-  signal reg_sel : Integer range 0 to 7;
+  signal reg_sell : Integer range 0 to 10;
+  signal reg_sel : Integer range 0 to 10;
   signal reg_data : Data;
   signal reg_write: Data;
   signal reg_we: Std_Logic := '0';
@@ -134,7 +135,7 @@ begin
 
   registers : register_bank
     generic map (
-      bank_size => 8,
+      bank_size => 10,
       data_width => data_width
     )
     port map (
@@ -186,6 +187,7 @@ begin
           cout_write <= '0';
           cin_read   <= '0';
           
+          -- report to_string(to_integer(unsigned(pc))) & ": " & to_string(to_integer(unsigned(data_in)));
           case to_integer(unsigned(data_in)) is
             when 0 =>
               state <= Halt;
@@ -232,6 +234,8 @@ begin
             when 20 =>
               state <= InWait;
             when 21 => null; -- noop
+            when 22 =>
+              state <= Sub;
             when others =>
               report "Unknown instruction: " & to_string(to_integer(unsigned(data_in)));
               null;
@@ -339,6 +343,24 @@ begin
           if (stage >= 0) then
             reg_write(data_width - 1) <= '0';
             reg_write(data_width - 2 downto 0) <= op1(data_width - 2 downto 0) + data_inr(data_width - 2 downto 0);
+            reg_we <= '1';
+            reg_sel <= stage;
+          end if;
+          state <= Fetch;
+          pc <= pc + 1;
+
+        when Sub =>
+          stage <= to_integer(unsigned(data_in)) - 32768;
+          state <= SubReadDest;
+          pc <= pc + 1;
+        when SubReadDest =>
+          state <= SubReadFirstArg;
+          op1 <= data_inr;
+          pc <= pc + 1;
+        when SubReadFirstArg =>
+          if (stage >= 0) then
+            reg_write(data_width - 1) <= '0';
+            reg_write(data_width - 2 downto 0) <= op1(data_width - 2 downto 0) - data_inr(data_width - 2 downto 0);
             reg_we <= '1';
             reg_sel <= stage;
           end if;
@@ -478,6 +500,7 @@ begin
         when Out1 =>
           -- cout <= data_inr(7 downto 0);
           -- cout_write <= '1';
+          report "Tried to print: " & to_string(character'val(to_integer(unsigned(data_inr))));
           if (data_inr < 128) then
             write(output, to_string(character'val(to_integer(unsigned(data_inr)))));
           end if;
